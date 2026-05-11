@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validations
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'email', 'role']) &&
+             data.userId == request.auth.uid &&
+             data.email is string && data.email.size() <= 256 &&
+             data.role in ['learner', 'poster'] &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('experienceHours' in data) || (data.experienceHours is number)) &&
+             (!('efficiency' in data) || (data.efficiency is number)) &&
+             (!('credentialsEarned' in data) || (data.credentialsEarned is number)) &&
+             (!('masteredSkills' in data) || (data.masteredSkills is list && data.masteredSkills.size() <= 50));
+    }
+
+    function isValidGig(data) {
+      return data.keys().hasAll(['title', 'postedBy', 'status']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.postedBy == request.auth.uid &&
+             data.status in ['Draft', 'Active', 'Completed'] &&
+             (!('desc' in data) || (data.desc is string && data.desc.size() <= 2000)) &&
+             (!('price' in data) || (data.price is number)) &&
+             (!('valuation' in data) || (data.valuation is string && data.valuation.size() <= 20)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             (!('duration' in data) || (data.duration is string && data.duration.size() <= 50)) &&
+             (!('skills' in data) || (data.skills is list && data.skills.size() <= 20)) &&
+             (!('image' in data) || (data.image is string && data.image.size() <= 1000));
+    }
+
+    function isValidApplication(data) {
+      return data.keys().hasAll(['gigId', 'userId', 'status']) &&
+             data.gigId is string && data.gigId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.status in ['Applied', 'Shortlisted', 'Accepted', 'Rejected', 'Withdrawn'] &&
+             (!('matchScore' in data) || (data.matchScore is number)) &&
+             (!('applicantName' in data) || (data.applicantName is string && data.applicantName.size() <= 100)) &&
+             (!('applicantAvatar' in data) || (data.applicantAvatar is string && data.applicantAvatar.size() <= 1000)) &&
+             (!('applicantPersona' in data) || (data.applicantPersona is string && data.applicantPersona.size() <= 100)) &&
+             (!('applicantSkills' in data) || (data.applicantSkills is list && data.applicantSkills.size() <= 20));
+    }
+
+    function isValidFeedback(data) {
+      return data.keys().hasAll(['gigId', 'authorId', 'recipientId', 'score']) &&
+             data.gigId is string && data.gigId.size() <= 128 &&
+             data.authorId == request.auth.uid &&
+             data.recipientId is string && data.recipientId.size() <= 128 &&
+             data.score is number && data.score >= 0 && data.score <= 5 &&
+             (!('comment' in data) || (data.comment is string && data.comment.size() <= 1000));
+    }
+
+    // match blocks
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isEmailVerified() && isValidId(userId) && userId == request.auth.uid && isValidUser(incoming()) && incoming().createdAt == request.time;
+      allow update: if isEmailVerified() && isOwner(userId) && isValidUser(incoming()) && 
+                    incoming().role == existing().role && 
+                    incoming().createdAt == existing().createdAt &&
+                    incoming().updatedAt == request.time;
+    }
+
+    match /gigs/{gigId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn(); 
+      allow create: if isEmailVerified() && isValidId(gigId) && isValidGig(incoming()) && incoming().createdAt == request.time;
+      allow update: if isEmailVerified() && existing().postedBy == request.auth.uid && isValidGig(incoming()) &&
+                    incoming().postedBy == existing().postedBy &&
+                    incoming().createdAt == existing().createdAt &&
+                    incoming().updatedAt == request.time;
+      allow delete: if isEmailVerified() && existing().postedBy == request.auth.uid;
+    }
+
+    match /applications/{applicationId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || 
+                   get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.postedBy == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || 
+                    get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.postedBy == request.auth.uid);
+      allow create: if isEmailVerified() && isValidId(applicationId) && isValidApplication(incoming()) && 
+                    incoming().userId == request.auth.uid &&
+                    incoming().status == 'Applied' &&
+                    incoming().createdAt == request.time &&
+                    get(/databases/$(database)/documents/gigs/$(incoming().gigId)).data.status == 'Active';
+      allow update: if isEmailVerified() && (
+                      (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == 'Withdrawn') ||
+                      (get(/databases/$(database)/documents/gigs/$(existing().gigId)).data.postedBy == request.auth.uid && 
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status in ['Shortlisted', 'Accepted', 'Rejected'])
+                    ) && incoming().updatedAt == request.time;
+    }
+
+    match /feedback/{feedbackId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isEmailVerified() && isValidId(feedbackId) && isValidFeedback(incoming()) &&
+                    get(/databases/$(database)/documents/gigs/$(incoming().gigId)).data.postedBy == request.auth.uid &&
+                    incoming().createdAt == request.time;
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user in the system (Learner or Poster)",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["learner", "poster"] },
+        "experienceHours": { "type": "number" },
+        "credentialsEarned": { "type": "number" },
+        "efficiency": { "type": "number" },
+        "masteredSkills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "level": { "type": "string" },
+              "tags": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "role"]
+    },
+    "Gig": {
+      "title": "Gig",
+      "description": "A mission or project posted by a Gig Poster",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "org": { "type": "string" },
+        "image": { "type": "string" },
+        "type": { "type": "string" },
+        "price": { "type": "number" },
+        "valuation": { "type": "string" },
+        "duration": { "type": "string" },
+        "category": { "type": "string" },
+        "desc": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "postedBy": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Draft", "Completed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "postedBy", "status"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "A learner's application to a gig",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "gigId": { "type": "string" },
+        "userId": { "type": "string" },
+        "status": { "type": "string", "enum": ["Applied", "Shortlisted", "Accepted", "Rejected"] },
+        "matchScore": { "type": "number" },
+        "applicantName": { "type": "string" },
+        "applicantAvatar": { "type": "string" },
+        "applicantSkills": { "type": "array", "items": { "type": "string" } },
+        "applicantPersona": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["gigId", "userId", "status"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "Feedback given to a learner after gig completion",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "gigId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "recipientId": { "type": "string" },
+        "score": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["gigId", "authorId", "recipientId", "score"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "gigs/{gigId}": {
+      "schema": "Gig",
+      "description": "Gig listings"
+    },
+    "applications/{applicationId}": {
+      "schema": "Application",
+      "description": "Gig applications"
+    },
+    "feedback/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "Gig completion feedback"
+    }
+  }
+}
