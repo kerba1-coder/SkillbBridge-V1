@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Brain
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -159,22 +160,40 @@ export const Passport: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(profile?.masteredSkills || []).map((skill, idx) => (
-            <div key={idx} className="bento-card flex items-start gap-6 group hover:translate-y-[-4px] bg-white border-slate-100 shadow-sm">
-              <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-md">
-                <Target size={28} />
-              </div>
-              <div className="flex-1 space-y-4">
-                <h4 className="text-lg font-black text-on-surface leading-tight group-hover:text-primary transition-colors italic">{skill.name}</h4>
-                <div className="flex flex-wrap gap-2">
-                  <span className="bg-slate-100 text-slate-700 text-[8px] px-3 py-1 rounded-lg font-bold uppercase tracking-widest border border-slate-200">{skill.level}</span>
-                  {skill.tags.map(tag => (
-                    <span key={tag} className="bg-primary/10 text-primary text-[8px] px-3 py-1 rounded-lg font-bold uppercase tracking-widest border border-primary/20">{tag}</span>
-                  ))}
+          {(profile?.masteredSkills || []).length > 0 ? (
+            (profile?.masteredSkills || []).map((skill, idx) => (
+              <div key={idx} className="bento-card flex items-start gap-6 group hover:translate-y-[-4px] bg-white border-slate-100 shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-md">
+                  <Target size={28} />
+                </div>
+                <div className="flex-1 space-y-4">
+                  <h4 className="text-lg font-black text-on-surface leading-tight group-hover:text-primary transition-colors italic">{skill.name}</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="bg-slate-100 text-slate-700 text-[8px] px-3 py-1 rounded-lg font-bold uppercase tracking-widest border border-slate-200">{skill.level}</span>
+                    {skill.tags.map(tag => (
+                      <span key={tag} className="bg-primary/10 text-primary text-[8px] px-3 py-1 rounded-lg font-bold uppercase tracking-widest border border-primary/20">{tag}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="col-span-full py-24 text-center bento-card border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center space-y-6">
+              <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-slate-300 shadow-sm border border-slate-100">
+                <BadgeCheck size={40} strokeWidth={1} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black text-on-surface uppercase italic tracking-tighter">Passport Empty.</h3>
+                <p className="text-slate-500 font-medium italic max-w-sm mx-auto">You haven't validated any skill nodes yet. Complete your first mission to start building your verified profile.</p>
+              </div>
+              <Link 
+                to="/registry"
+                className="px-12 py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:brightness-110 active:scale-95 transition-all uppercase tracking-[0.2em] text-[10px] italic"
+              >
+                Find a Mission
+              </Link>
             </div>
-          ))}
+          )}
         </div>
       </section>
 

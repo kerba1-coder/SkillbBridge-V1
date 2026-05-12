@@ -12,7 +12,7 @@ export interface SkillInsight {
 export interface Recommendation {
   title: string;
   description: string;
-  type: 'Gig' | 'Career' | 'Learning';
+  type: 'Gig' | 'Gig Pathway';
   matchScore: number;
 }
 
@@ -34,9 +34,14 @@ export const geminiService = {
         { "label": "Skill Name", "icon": "Lucide icon name (Zap, Brain, BarChart3, etc.)", "relevanceScore": 0.95, "reasoning": "Why this skill is relevant" }
       ],
       "recommendations": [
-        { "title": "Recommendation Title", "description": "Details", "type": "Gig | Career | Learning", "matchScore": 0.9 }
+        { "title": "Recommendation Title", "description": "Details", "type": "Gig | Gig Pathway", "matchScore": 0.9 }
       ]
-    }`;
+    }
+    
+    CRITICAL CONSTRAINTS for recommendations:
+    1. Only use types: "Gig" or "Gig Pathway".
+    2. NEVER include "Learning Pathway" options like "earn a certification" or "apply for an external internship".
+    3. For "Gig Pathway", provide options like: Work Shadow opportunity, office tour, attend a conference, symposium, or speaker series.`;
 
     try {
       const response = await ai.models.generateContent({
@@ -91,7 +96,7 @@ export const geminiService = {
   async analyzeImage(base64Image: string): Promise<AnalysisResult> {
     const prompt = `Analyze this image (could be a screenshot of an article, a press release, or an investor letter).
     Identify workforce trends, emerging strategic skills, and career opportunities.
-    Return JSON format.`;
+    Return JSON format following the same schema as analyzeContent, using the same "Gig" and "Gig Pathway" constraints (NO certifications, NO external internships. YES Work shadow, office tours, etc.).`;
 
     try {
       const response = await ai.models.generateContent({

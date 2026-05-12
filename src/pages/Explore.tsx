@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Search, 
   Upload, 
@@ -23,21 +23,58 @@ import {
   ArrowLeft,
   X,
   Plus,
-  Trash2
+  Trash2,
+  History
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { geminiService, AnalysisResult } from '../services/geminiService';
 
+interface RecHistory {
+  title: string;
+  description: string;
+  type: string;
+  timestamp: string;
+}
+
 export const Explore: React.FC = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState<'HOME' | 'URL' | 'PDF' | 'IMAGE' | 'RESULTS'>('HOME');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [input, setInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [recentGigs, setRecentGigs] = useState<RecHistory[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('GIG_RECOMMENDATION_HISTORY');
+    if (saved) {
+      try {
+        setRecentGigs(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse history", e);
+      }
+    }
+  }, []);
+
+  const saveToHistory = (recs: AnalysisResult['recommendations']) => {
+    const gigRecs = recs
+      .filter(r => r.type === 'Gig')
+      .map(r => ({ ...r, timestamp: new Date().toISOString() }));
+    
+    if (gigRecs.length > 0) {
+      const existing = JSON.parse(localStorage.getItem('GIG_RECOMMENDATION_HISTORY') || '[]');
+      const combined = [...gigRecs, ...existing]
+        .filter((v, i, a) => a.findIndex(t => t.title === v.title) === i)
+        .slice(0, 2);
+      
+      setRecentGigs(combined);
+      localStorage.setItem('GIG_RECOMMENDATION_HISTORY', JSON.stringify(combined));
+    }
+  };
 
   const handleAnalyze = async () => {
     if (!input && !selectedFile && !isAnalyzing) return;
@@ -48,6 +85,7 @@ export const Explore: React.FC = () => {
       if (step === 'URL') {
         const data = await geminiService.analyzeContent(input, 'url');
         setResults(data);
+        saveToHistory(data.recommendations);
       } else if (step === 'PDF' && selectedFile) {
         // Simple Base64 read for the demo
         const reader = new FileReader();
@@ -55,6 +93,7 @@ export const Explore: React.FC = () => {
           const base64 = e.target?.result as string;
           const data = await geminiService.analyzeContent(base64, 'text');
           setResults(data);
+          saveToHistory(data.recommendations);
           setIsAnalyzing(false);
           setStep('RESULTS');
         };
@@ -66,6 +105,7 @@ export const Explore: React.FC = () => {
           const base64 = e.target?.result as string;
           const data = await geminiService.analyzeImage(base64);
           setResults(data);
+          saveToHistory(data.recommendations);
           setIsAnalyzing(false);
           setStep('RESULTS');
         };
@@ -124,11 +164,43 @@ export const Explore: React.FC = () => {
             exit={{ opacity: 0, y: -20 }}
             className="space-y-6"
           >
-            {/* Card 1: Paste Article Link */}
-            <button 
-              onClick={() => setStep('URL')}
-              className="w-full bento-card bg-white p-8 border-slate-100 flex flex-col items-center text-center gap-6 group hover:border-primary/20 hover:shadow-xl transition-all"
-            >
+            {recentGigs.length > 0 && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-1000">
+                <div className="flex items-center gap-3 px-2">
+                   <History size={14} className="text-primary" />
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Recent Gig Matches</h4>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {recentGigs.map((gig, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => navigate(`/registry?search=${encodeURIComponent(gig.title)}`)}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:bg-white hover:border-primary/20 hover:shadow-xl transition-all text-left"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
+                           <Briefcase size={20} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-on-surface uppercase italic tracking-tight line-clamp-1">{gig.title}</p>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Matched via AI Signal</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-[8px] font-black text-primary uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                         Apply to Gig <ArrowUpRight size={12} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-4">
+              {/* Card 1: Paste Article Link */}
+              <button 
+                onClick={() => setStep('URL')}
+                className="w-full bento-card bg-white p-8 border-slate-100 flex flex-col items-center text-center gap-6 group hover:border-primary/20 hover:shadow-xl transition-all"
+              >
               <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
                 <LinkIcon size={32} />
               </div>
@@ -165,8 +237,9 @@ export const Explore: React.FC = () => {
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest leading-loose">OCR extraction from visuals & news clips</p>
               </div>
             </button>
-          </motion.div>
-        )}
+          </div>
+        </motion.div>
+      )}
 
         {step === 'URL' && (
           <motion.div 
@@ -390,23 +463,30 @@ export const Explore: React.FC = () => {
                       {results.skills.map((skill, idx) => {
                         const IconComp = iconMap[skill.icon] || Zap;
                         return (
-                          <div 
+                          <button 
                             key={idx}
-                            className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-4 group/skill hover:bg-primary transition-all duration-500 group"
+                            onClick={() => navigate(`/registry?search=${encodeURIComponent(skill.label)}`)}
+                            className="w-full text-left p-8 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-4 group/skill hover:bg-primary transition-all duration-500 group"
                           >
                              <div className="flex justify-between items-center">
                                 <div className="p-3 bg-white rounded-2xl shadow-sm text-primary group-hover/skill:scale-110 transition-transform">
                                    <IconComp size={24} />
                                 </div>
-                                <span className="text-xs font-black text-primary group-hover/skill:text-white transition-colors">{Math.round(skill.relevanceScore * 100)}% Match</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-black text-primary group-hover/skill:text-white transition-colors">{Math.round(skill.relevanceScore * 100)}% Match</span>
+                                  <ArrowUpRight size={14} className="text-primary group-hover/skill:text-white transition-colors opacity-0 group-hover/skill:opacity-100" />
+                                </div>
                              </div>
                              <div className="space-y-2">
                                <h4 className="text-xl font-black text-on-surface uppercase tracking-tight group-hover/skill:text-white transition-colors">{skill.label}</h4>
                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed group-hover/skill:text-white/70 transition-colors">
                                  {skill.reasoning}
                                </p>
+                               <div className="pt-4 flex items-center gap-2 text-[8px] font-black text-primary uppercase tracking-[0.2em] opacity-0 group-hover/skill:opacity-100 transition-opacity">
+                                 <Briefcase size={12} /> View Available Gigs
+                               </div>
                              </div>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -418,21 +498,20 @@ export const Explore: React.FC = () => {
                 {results.recommendations.map((rec, idx) => (
                   <Link 
                     key={idx}
-                    to={rec.type === 'Gig' ? '/registry' : '#'}
+                    to="/registry"
                     className="group bg-white p-10 lg:p-14 rounded-[3rem] lg:rounded-[4rem] shadow-sm border border-slate-100 hover:shadow-2xl hover:scale-[1.01] transition-all duration-700 overflow-hidden relative flex flex-col justify-between"
                   >
                     <div className="space-y-8 relative z-10">
                       <div className="flex justify-between items-start">
                         <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-[1.5rem] lg:rounded-[2rem] bg-slate-50 flex items-center justify-center text-primary border border-slate-100 shadow-sm group-hover:scale-110 transition-transform group-hover:bg-primary group-hover:text-white">
-                          {rec.type === 'Gig' ? <Briefcase size={32} /> : rec.type === 'Career' ? <Zap size={32} /> : <Brain size={32} />}
+                          {rec.type === 'Gig' ? <Briefcase size={32} /> : <TrendingUp size={32} />}
                         </div>
                         <span className={cn(
                           "px-6 lg:px-8 py-2 lg:py-2.5 rounded-full text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm",
                           rec.type === 'Gig' ? "bg-primary/10 text-primary border-primary/20" : 
-                          rec.type === 'Career' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                          "bg-amber-50 text-amber-600 border-amber-100"
+                          "bg-emerald-50 text-emerald-600 border-emerald-100"
                         )}>
-                          {rec.type} Pathway
+                          {rec.type}
                         </span>
                       </div>
                       <div className="space-y-4">

@@ -25,7 +25,15 @@ import { cn } from '../lib/utils';
 import { userService } from '../services/firestoreService';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { profile, isLearner, isPoster, user } = useAuth();
+  const { profile, isLearner, isPoster, user, signInWithGoogle, logout } = useAuth();
+
+  const handleLogin = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+  };
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isSwitching, setIsSwitching] = React.useState(false);
@@ -51,7 +59,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { to: "/", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/discover", icon: Compass, label: "Discovery" },
     { to: "/explore", icon: BrainCircuit, label: "A.I. Skills Explorer" },
-    { to: "/registry", icon: Search, label: "Marketplace" },
+    { to: "/marketplace", icon: Search, label: "Marketplace" },
     { to: "/projects", icon: Briefcase, label: "Projects" },
     { to: "/passport", icon: BadgeCheck, label: "Passport" },
   ];
@@ -59,7 +67,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const posterItems = [
     { to: "/poster-dashboard", icon: LayoutDashboard, label: "Gig Posting Dashboard" },
     { to: "/scoping", icon: Zap, label: "AI Gig Builder" },
-    { to: "/registry", icon: Search, label: "Network" },
+    { to: "/marketplace", icon: Search, label: "Network" },
     { to: "/insights", icon: BarChart3, label: "Strategic Ops" },
   ];
 
@@ -165,19 +173,38 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <span className="text-xl font-black tracking-tighter text-on-surface uppercase italic underline decoration-primary/10 underline-offset-4">SkillBridge AI</span>
           </Link>
 
-          <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-100 mt-2">
-            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white border border-slate-200">
-              <img 
-                alt={profile?.fullName || "User"} 
-                className="w-full h-full object-cover" 
-                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop"
-              />
+          {!user ? (
+            <button 
+              onClick={handleLogin}
+              className="flex items-center gap-4 bg-primary text-white p-5 rounded-3xl shadow-xl shadow-primary/20 hover:brightness-110 active:scale-95 transition-all mt-2 group"
+            >
+              <div className="p-2 bg-white/20 rounded-xl">
+                <UserIcon size={20} />
+              </div>
+              <span className="font-black uppercase italic tracking-tighter text-sm">Sync Identity</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-100 mt-2 relative group/profile">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white border border-slate-200">
+                <img 
+                  alt={profile?.fullName || "User"} 
+                  className="w-full h-full object-cover" 
+                  src={user.photoURL || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop"}
+                />
+              </div>
+              <div className="overflow-hidden">
+                <h3 className="font-semibold text-sm text-on-surface truncate">{profile?.fullName || profile?.displayName || "Anonymous User"}</h3>
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest truncate">{isPoster ? "Gig Poster" : "Elite Learner"}</p>
+              </div>
+              
+              <button 
+                onClick={logout}
+                className="absolute -right-2 -top-2 p-2 bg-white border border-slate-200 rounded-full text-slate-400 hover:text-rose-500 opacity-0 group-hover/profile:opacity-100 transition-all shadow-sm"
+              >
+                <X size={12} />
+              </button>
             </div>
-            <div className="overflow-hidden">
-              <h3 className="font-semibold text-sm text-on-surface truncate">{profile?.fullName || profile?.displayName || "Alex Morgan"}</h3>
-              <p className="text-[10px] font-bold text-primary uppercase tracking-widest truncate">{isPoster ? "Gig Poster" : "Elite Learner"}</p>
-            </div>
-          </div>
+          )}
         </div>
 
         <nav className="flex flex-col gap-1 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-8">
@@ -250,13 +277,22 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <Menu size={24} className="text-on-surface" />
               </button>
               {/* Profile Icon under Burger */}
-              <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                <img 
-                  alt="Profile" 
-                  className="w-full h-full object-cover" 
-                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop"
-                />
-              </div>
+              {!user ? (
+                <button 
+                  onClick={handleLogin}
+                  className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm active:scale-90"
+                >
+                  <UserIcon size={18} />
+                </button>
+              ) : (
+                <Link to="/passport" className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                  <img 
+                    alt="Profile" 
+                    className="w-full h-full object-cover" 
+                    src={user.photoURL || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop"}
+                  />
+                </Link>
+              )}
             </div>
             <div className="flex flex-col lg:hidden">
               <h1 className="text-lg font-black text-on-surface uppercase italic tracking-tighter">SkillBridge AI</h1>

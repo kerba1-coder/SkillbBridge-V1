@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   CheckCircle2, 
@@ -14,24 +14,83 @@ import {
   Target,
   LayoutGrid,
   Database,
-  Rocket
+  Rocket,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-hot-toast';
 import { cn } from '../lib/utils';
-
-type ApplicationStatus = 'Accepted' | 'Denied' | 'Under Review';
+import { applicationService } from '../services/firestoreService';
+import { Application } from '../types';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export const ApplicationStatus: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [acceptedStep, setAcceptedStep] = useState<'decision' | 'terms' | 'onboarding'>('decision');
+  const [application, setApplication] = useState<Application | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isSimulating, setIsSimulating] = useState(false);
 
-  // Hardcoded status based on ID for demo purposes
-  // 1: Under Review (from tracker in Home)
-  // 2: Accepted
-  // 3: Denied
-  const status: ApplicationStatus = id === '2' ? 'Accepted' : id === '3' ? 'Denied' : 'Under Review';
+  useEffect(() => {
+    const syncApp = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const docRef = doc(db, 'applications', id);
+        const { getDoc } = await import('firebase/firestore');
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          setApplication({ ...snap.data(), id: snap.id } as Application);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    syncApp();
+  }, [id]);
+
+  const handleSimulateAccept = async () => {
+    if (!id || !application) return;
+    setIsSimulating(true);
+    try {
+      const docRef = doc(db, 'applications', id);
+      await updateDoc(docRef, { status: 'Accepted' });
+      setApplication(prev => prev ? { ...prev, status: 'Accepted' } : null);
+      toast.success('Simulation: Candidate Selected');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-64 space-y-4">
+        <Loader2 className="animate-spin text-primary" size={48} />
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Retrieving Application Protocol...</p>
+      </div>
+    );
+  }
+
+  if (!application) {
+    return (
+      <div className="text-center py-32 space-y-6">
+        <h2 className="text-3xl font-black text-on-surface uppercase italic">Record Not Found.</h2>
+        <p className="text-slate-500 font-medium italic">The application ID provided does not match any known deployments.</p>
+        <button onClick={() => navigate('/')} className="px-8 py-3 bg-primary text-white font-black rounded-xl uppercase text-[10px] tracking-widest italic">Back to Dashboard</button>
+      </div>
+    );
+  }
+
+  const status = application.status;
 
   return (
     <div className="max-w-xl mx-auto space-y-8 pb-32 animate-in fade-in duration-700">
@@ -67,7 +126,7 @@ export const ApplicationStatus: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <h2 className="text-4xl lg:text-5xl font-black text-on-surface tracking-tighter italic">Mission <span className="text-emerald-500 underline decoration-emerald-500/20 underline-offset-8">Accepted.</span></h2>
-                    <p className="text-slate-500 font-medium italic">Congratulations! TechCorp has selected you for the Growth Gig Analysis project.</p>
+                    <p className="text-slate-500 font-medium italic">Congratulations! You have been selected for the {application.gigTitle} project.</p>
                   </div>
                 </div>
 
@@ -175,7 +234,7 @@ export const ApplicationStatus: React.FC = () => {
           </motion.div>
         )}
 
-        {status === 'Denied' && (
+        {status === 'Rejected' && (
           <motion.div 
             key="denied"
             initial={{ opacity: 0, y: 20 }}
@@ -245,7 +304,7 @@ export const ApplicationStatus: React.FC = () => {
           </motion.div>
         )}
 
-        {status === 'Under Review' && (
+        {(status === 'Applied' || status === 'Shortlisted') && (
           <motion.div 
             key="under-review"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -265,17 +324,24 @@ export const ApplicationStatus: React.FC = () => {
             <div className="space-y-6">
               <h2 className="text-4xl lg:text-5xl font-black text-on-surface tracking-tighter italic uppercase underline decoration-amber-400/20 underline-offset-8">Review <span className="text-amber-500">Pending.</span></h2>
               <p className="text-slate-500 font-medium italic text-lg leading-relaxed max-w-sm mx-auto">
-                The organization is currently evaluating your operational profile and pitch. Standard response window is 48-72 hours.
+                The organization is currently evaluating your operational profile and pitch for <span className="text-on-surface font-bold">"{application.gigTitle}"</span>.
               </p>
             </div>
 
             <div className="flex flex-col w-full gap-4 pt-10">
-              <Link 
-                to="/registry" 
-                className="w-full py-6 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:brightness-110 transition-all flex items-center justify-center gap-4 uppercase tracking-[0.2em] text-sm"
+              <button 
+                onClick={handleSimulateAccept}
+                disabled={isSimulating}
+                className="w-full py-6 bg-emerald-500 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 hover:brightness-110 transition-all flex items-center justify-center gap-4 uppercase tracking-[0.2em] text-sm group"
               >
-                Explore Marketplace
-              </Link>
+                {isSimulating ? (
+                  <Loader2 className="animate-spin" size={24} />
+                ) : (
+                  <>
+                    Simulate Selection <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
+                  </>
+                )}
+              </button>
               <Link 
                 to="/" 
                 className="w-full py-6 bg-white border border-slate-100 text-slate-400 font-black rounded-2xl hover:bg-slate-50 transition-all text-center uppercase tracking-[0.2em] text-[10px] shadow-sm"

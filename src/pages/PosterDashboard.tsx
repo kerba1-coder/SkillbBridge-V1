@@ -18,7 +18,8 @@ import {
   BrainCircuit,
   Loader2,
   Plus,
-  Globe
+  Globe,
+  Rocket
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -84,6 +85,36 @@ export const PosterDashboard: React.FC = () => {
     };
     fetchApps();
   }, [selectedGigId]);
+
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  const handleSeedGig = async () => {
+    if (!user) return;
+    setIsSeeding(true);
+    try {
+      await gigService.seedGigs([{
+        title: 'Global Logistics Sync',
+        desc: 'Analyzing and optimizing international shipping corridors using predictive AI modules. High impact mission with multi-node coordination required.',
+        postedBy: user.uid,
+        status: 'Active',
+        valuation: '$4,200',
+        duration: '4-6 Weeks',
+        skills: ['Data Ops', 'Logistics AI', 'Supply Chain Strategy']
+      }]);
+      // Refetch
+      const liveGigs = await gigService.getPosterGigs(user.uid);
+      if (liveGigs) {
+        setGigs(liveGigs);
+        if (liveGigs.length > 0) {
+          setSelectedGigId(liveGigs[0].id);
+        }
+      }
+    } catch (e) {
+      console.error("Seeding failed", e);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const activeGigs = gigs.filter(g => g.status === 'Active' || g.status === 'Draft');
   const historicGigs = gigs.filter(g => g.status === 'Completed');
@@ -163,7 +194,7 @@ export const PosterDashboard: React.FC = () => {
       <div className="px-3 lg:px-0 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <h2 className="text-3xl lg:text-7xl font-black text-on-surface tracking-tighter uppercase italic">
-            Hirer <span className="text-primary underline decoration-primary/20 underline-offset-8">Workspace.</span>
+            Poster <span className="text-primary underline decoration-primary/20 underline-offset-8">Workspace.</span>
           </h2>
           <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.4em] italic mt-2">Talent Discovery • Phase: Active Orchestration</p>
         </div>
@@ -238,7 +269,7 @@ export const PosterDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {displayedGigs.length > 0 ? (
                       displayedGigs.slice(0, 4).map((gig: any) => (
                         <button 
@@ -266,8 +297,16 @@ export const PosterDashboard: React.FC = () => {
                         </button>
                       ))
                     ) : (
-                      <div className="col-span-2 p-12 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+                      <div className="col-span-2 p-12 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200 flex flex-col items-center gap-6">
                         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest italic">No gigs deployed in this sector.</p>
+                        <button 
+                          onClick={handleSeedGig}
+                          disabled={isSeeding}
+                          className="px-8 py-4 bg-primary/10 text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all italic flex items-center gap-3 disabled:opacity-50"
+                        >
+                          {isSeeding ? <Loader2 className="animate-spin" size={16} /> : <Rocket size={16} />}
+                          Deploy Initial Mission
+                        </button>
                       </div>
                     )}
                   </div>

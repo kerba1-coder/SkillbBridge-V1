@@ -87,84 +87,98 @@ export const ActiveProjects: React.FC = () => {
       {/* Projects List */}
       <section className="space-y-6 px-4 lg:px-0">
         <div className="grid grid-cols-1 gap-6">
-          {activeMissions.map((mission, index) => (
-            <motion.div
-              key={mission.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <div className="bento-card group hover:border-primary/30 transition-all p-0 overflow-hidden relative border-slate-100 shadow-sm bg-white">
-                <div className="flex flex-col lg:flex-row h-full">
-                  <div className="p-6 md:p-8 lg:p-12 flex-1 space-y-6 md:space-y-8">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <span className="px-3 py-1 bg-slate-50 border border-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-widest rounded-md italic">
-                            {mission.status}
-                          </span>
-                          <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">{mission.value}</span>
-                        </div>
-                        <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tighter uppercase italic mt-2">
-                          <Link to={`/application/${mission.id}/dashboard`} className="text-slate-900 hover:text-primary transition-colors">
-                            {mission.title}.
-                          </Link>
-                        </h3>
-                        <p className="text-[10px] md:text-sm font-bold text-slate-500 uppercase tracking-widest leading-relaxed">{mission.org} • {mission.role}</p>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <div className="flex items-center justify-end gap-2 text-rose-500">
-                          <Clock size={14} className="md:w-4 md:h-4" />
-                          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{mission.deadline}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-0">
+          {activeMissions.length > 0 ? (
+            activeMissions.map((mission, index) => (
+              <motion.div
+                key={mission.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <div className="bento-card group hover:border-primary/30 transition-all p-0 overflow-hidden relative border-slate-100 shadow-sm bg-white">
+                  <div className="flex flex-col lg:flex-row h-full">
+                    <div className="p-6 md:p-8 lg:p-12 flex-1 space-y-6 md:space-y-8">
+                      <div className="flex justify-between items-start">
                         <div className="space-y-1">
-                          <p className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Current Synchronization</p>
-                          <p className="text-3xl md:text-4xl font-bold text-on-surface tracking-tighter">{mission.progress}%</p>
+                          <div className="flex items-center gap-3">
+                            <span className="px-3 py-1 bg-slate-50 border border-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-widest rounded-md italic">
+                              {mission.status}
+                            </span>
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">{mission.value}</span>
+                          </div>
+                          <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tighter uppercase italic mt-2">
+                            <Link to={`/application/${mission.id}/dashboard`} className="text-slate-900 hover:text-primary transition-colors">
+                              {mission.title}.
+                            </Link>
+                          </h3>
+                          <p className="text-[10px] md:text-sm font-bold text-slate-500 uppercase tracking-widest leading-relaxed">{mission.org} • {mission.role}</p>
                         </div>
-                        <Link 
-                          to={`/application/${mission.id}/dashboard`}
-                          className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest text-primary group-hover:translate-x-2 transition-transform mb-2"
-                        >
-                          Access Core Dashboard <ChevronRight size={14} />
-                        </Link>
+                        <div className="text-right space-y-1">
+                          <div className="flex items-center justify-end gap-2 text-rose-500">
+                            <Clock size={14} className="md:w-4 md:h-4" />
+                            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{mission.deadline}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200 p-[1px]">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${mission.progress}%` }}
-                          transition={{ duration: 1, ease: 'easeOut' }}
-                          className="h-full bg-primary rounded-full shadow-sm"
-                        ></motion.div>
+
+                      <div className="space-y-4">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-0">
+                          <div className="space-y-1">
+                            <p className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Current Synchronization</p>
+                            <p className="text-3xl md:text-4xl font-bold text-on-surface tracking-tighter">{mission.progress}%</p>
+                          </div>
+                          <Link 
+                            to={`/application/${mission.id}/dashboard`}
+                            className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest text-primary group-hover:translate-x-2 transition-transform mb-2"
+                          >
+                            Access Core Dashboard <ChevronRight size={14} />
+                          </Link>
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200 p-[1px]">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${mission.progress}%` }}
+                            transition={{ duration: 1, ease: 'easeOut' }}
+                            className="h-full bg-primary rounded-full shadow-sm"
+                          ></motion.div>
+                        </div>
                       </div>
                     </div>
+                    
+                    <Link 
+                      to={`/application/${mission.id}/dashboard`}
+                      className="lg:w-48 bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-100 hover:bg-primary transition-all duration-500 flex items-center justify-center group/btn py-8 lg:py-0 shadow-inner"
+                    >
+                      <LayoutDashboard size={32} className="text-slate-400 group-hover/btn:text-white group-hover/btn:scale-125 transition-all" />
+                    </Link>
                   </div>
-                  
-                  <Link 
-                    to={`/application/${mission.id}/dashboard`}
-                    className="lg:w-48 bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-100 hover:bg-primary transition-all duration-500 flex items-center justify-center group/btn py-8 lg:py-0 shadow-inner"
-                  >
-                    <LayoutDashboard size={32} className="text-slate-400 group-hover/btn:text-white group-hover/btn:scale-125 transition-all" />
-                  </Link>
                 </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="py-24 text-center bento-card border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center space-y-6">
+              <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-slate-300 shadow-sm border border-slate-100">
+                <Briefcase size={40} strokeWidth={1} />
               </div>
-            </motion.div>
-          ))}
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black text-on-surface uppercase italic tracking-tighter">No Active Nodes.</h3>
+                <p className="text-slate-500 font-medium italic max-w-sm mx-auto">Your operational queue is currently empty. You have no active mission deployments assigned.</p>
+              </div>
+              <Link 
+                to="/registry"
+                className="px-12 py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:brightness-110 active:scale-95 transition-all uppercase tracking-[0.2em] text-[10px] italic"
+              >
+                Explore Active Marketplace
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Empty State / More info */}
+      {/* Footer Info */}
       <section>
-        <div className="bento-card border-dashed border-slate-800 text-center py-16 space-y-4">
-          <Briefcase className="mx-auto text-slate-700" size={48} />
-          <div className="space-y-1">
-            <p className="text-slate-500 font-medium italic">All active project nodes are currently synchronized.</p>
-            <p className="text-[10px] font-bold text-slate-700 uppercase tracking-[0.2em] uppercase">Need more work? <Link to="/registry" className="text-primary hover:underline">Return to Marketplace.</Link></p>
-          </div>
+        <div className="bento-card bg-slate-900 border-slate-800 text-center py-10 space-y-4">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] uppercase">Need a specialized mission? Contact <span className="text-primary cursor-pointer hover:underline">Strategic Ops.</span></p>
         </div>
       </section>
     </div>

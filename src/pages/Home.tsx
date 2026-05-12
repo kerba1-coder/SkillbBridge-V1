@@ -73,7 +73,7 @@ export const Home: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               className="text-4xl lg:text-5xl font-extrabold text-on-surface leading-tight underline decoration-primary/20 underline-offset-8"
             >
-              Intelligence <span className="text-primary">Dashboard.</span>
+              Let's find a <span className="text-primary">Gig.</span>
             </motion.h2>
           </div>
           
@@ -198,15 +198,20 @@ export const Home: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="py-20 text-center space-y-4">
-                    <p className="text-slate-600 font-medium italic">No matches found for "{searchQuery}"</p>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Try searching by category or specific skill</p>
+                  <div className="py-20 flex flex-col items-center justify-center text-center space-y-6">
+                    <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300">
+                      <Search size={40} strokeWidth={1} />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-slate-600 font-medium italic">No matches found for "{searchQuery}"</p>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Try searching by category or specific skill</p>
+                    </div>
                   </div>
                 )}
               </div>
               
               <div className="p-8 bg-slate-50 border-t border-slate-100 text-center">
-                <Link to="/registry" onClick={() => setSearchQuery('')} className="text-[10px] font-bold text-slate-500 hover:text-primary uppercase tracking-[0.5em] transition-all">
+                <Link to="/marketplace" onClick={() => setSearchQuery('')} className="text-[10px] font-bold text-slate-500 hover:text-primary uppercase tracking-[0.5em] transition-all">
                   Browse full marketplace
                 </Link>
               </div>
@@ -236,12 +241,11 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Stats Mini Grid */}
-      <div className="col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { label: 'Active Projects', value: '3', color: 'text-primary', to: '/active-projects', icon: Briefcase },
           { label: 'Verified Skills', value: '12', color: 'text-emerald-500', to: '/passport', icon: Target },
           { label: 'Path Progress', value: '68%', color: 'text-amber-500', to: '/passport', icon: TrendingUp },
-          { label: 'Global Rank', value: '#402', color: 'text-indigo-500', icon: Award }
         ].map((stat) => (
           <Link 
             key={stat.label} 
@@ -271,7 +275,7 @@ export const Home: React.FC = () => {
             <p className="text-slate-600 text-sm font-medium italic font-semibold">Access the complete database of 100+ gigs.</p>
           </div>
           <Link 
-            to="/registry" 
+            to="/marketplace" 
             className="px-12 py-5 bg-primary text-white font-black rounded-2xl text-[10px] lg:text-xs uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-xl shadow-primary/20 active:scale-95 whitespace-nowrap italic"
           >
             Enter Marketplace
@@ -326,7 +330,7 @@ export const Home: React.FC = () => {
           ) : (
             <div className="col-span-3 bento-card text-center py-12 bg-slate-50 border-dashed border-slate-200">
               <p className="text-sm text-slate-500 italic">No active applications currently.</p>
-              <Link to="/registry" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline mt-2 inline-block">Find your first mission</Link>
+              <Link to="/marketplace" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline mt-2 inline-block">Find your first mission</Link>
             </div>
           )}
         </div>
@@ -336,7 +340,7 @@ export const Home: React.FC = () => {
       <section className="col-span-12 space-y-6">
         <div className="flex justify-between items-end px-4">
           <h3 className="text-[10px] font-extrabold text-slate-600 uppercase tracking-[0.4em]">search by skill</h3>
-          <Link to="/registry" className="text-primary text-xs font-bold uppercase tracking-widest hover:underline underline-offset-8 transition-all">view all</Link>
+          <Link to="/marketplace" className="text-primary text-xs font-bold uppercase tracking-widest hover:underline underline-offset-8 transition-all">view all</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[

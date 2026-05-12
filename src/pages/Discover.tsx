@@ -91,7 +91,7 @@ export const Discover: React.FC = () => {
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 pl-12 lg:pl-16 pr-6 focus:bg-white focus:border-primary/30 transition-all outline-none font-medium text-xs lg:text-base text-on-surface placeholder:text-slate-400 shadow-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  navigate(`/projects?search=${(e.target as HTMLInputElement).value}`);
+                  navigate(`/marketplace?search=${(e.target as HTMLInputElement).value}`);
                 }
               }}
             />

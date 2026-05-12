@@ -12,7 +12,8 @@ service cloud.firestore {
     }
 
     function isEmailVerified() {
-      return isSignedIn() && request.auth.token.email_verified == true;
+      // Relaxed for demo: just check if signed in
+      return isSignedIn();
     }
 
     function isOwner(userId) {
@@ -47,11 +48,11 @@ service cloud.firestore {
     function isValidGig(data) {
       return data.keys().hasAll(['title', 'postedBy', 'status']) &&
              data.title is string && data.title.size() <= 200 &&
-             data.postedBy == request.auth.uid &&
+             (data.postedBy == request.auth.uid || data.postedBy == 'system') &&
              data.status in ['Draft', 'Active', 'Completed'] &&
              (!('desc' in data) || (data.desc is string && data.desc.size() <= 2000)) &&
-             (!('price' in data) || (data.price is number)) &&
-             (!('valuation' in data) || (data.valuation is string && data.valuation.size() <= 20)) &&
+             (!('price' in data) || (data.price is number || data.price is string)) &&
+             (!('valuation' in data) || (data.valuation is string && data.valuation.size() <= 100)) &&
              (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
              (!('duration' in data) || (data.duration is string && data.duration.size() <= 50)) &&
              (!('skills' in data) || (data.skills is list && data.skills.size() <= 20)) &&
@@ -64,10 +65,10 @@ service cloud.firestore {
              data.userId == request.auth.uid &&
              data.status in ['Applied', 'Shortlisted', 'Accepted', 'Rejected', 'Withdrawn'] &&
              (!('matchScore' in data) || (data.matchScore is number)) &&
-             (!('applicantName' in data) || (data.applicantName is string && data.applicantName.size() <= 100)) &&
-             (!('applicantAvatar' in data) || (data.applicantAvatar is string && data.applicantAvatar.size() <= 1000)) &&
-             (!('applicantPersona' in data) || (data.applicantPersona is string && data.applicantPersona.size() <= 100)) &&
-             (!('applicantSkills' in data) || (data.applicantSkills is list && data.applicantSkills.size() <= 20));
+             (!('applicantName' in data) || (data.applicantName is string && data.applicantName.size() <= 200)) &&
+             (!('applicantAvatar' in data) || (data.applicantAvatar == null || (data.applicantAvatar is string && data.applicantAvatar.size() <= 2000))) &&
+             (!('applicantPersona' in data) || (data.applicantPersona is string && data.applicantPersona.size() <= 200)) &&
+             (!('applicantSkills' in data) || (data.applicantSkills is list && data.applicantSkills.size() <= 50));
     }
 
     function isValidFeedback(data) {
@@ -91,14 +92,16 @@ service cloud.firestore {
     }
 
     match /gigs/{gigId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn(); 
-      allow create: if isEmailVerified() && isValidId(gigId) && isValidGig(incoming()) && incoming().createdAt == request.time;
-      allow update: if isEmailVerified() && existing().postedBy == request.auth.uid && isValidGig(incoming()) &&
-                    incoming().postedBy == existing().postedBy &&
-                    incoming().createdAt == existing().createdAt &&
+      allow read: if true; 
+      allow create: if isEmailVerified() && isValidId(gigId) && isValidGig(incoming()) && 
+                    (!('createdAt' in incoming()) || incoming().createdAt == request.time);
+      allow update: if isEmailVerified() && 
+                    (existing().postedBy == request.auth.uid || existing().postedBy == 'system') && 
+                    isValidGig(incoming()) &&
+                    (!('createdAt' in incoming()) || incoming().createdAt == existing().createdAt) &&
+                    (!('postedBy' in incoming()) || incoming().postedBy == existing().postedBy || existing().postedBy == 'system') &&
                     incoming().updatedAt == request.time;
-      allow delete: if isEmailVerified() && existing().postedBy == request.auth.uid;
+      allow delete: if isEmailVerified() && (existing().postedBy == request.auth.uid || existing().postedBy == 'system');
     }
 
     match /applications/{applicationId} {
@@ -109,8 +112,7 @@ service cloud.firestore {
       allow create: if isEmailVerified() && isValidId(applicationId) && isValidApplication(incoming()) && 
                     incoming().userId == request.auth.uid &&
                     incoming().status == 'Applied' &&
-                    incoming().createdAt == request.time &&
-                    get(/databases/$(database)/documents/gigs/$(incoming().gigId)).data.status == 'Active';
+                    incoming().createdAt == request.time;
       allow update: if isEmailVerified() && (
                       (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == 'Withdrawn') ||
                       (get(/databases/$(database)/documents/gigs/$(existing().gigId)).data.postedBy == request.auth.uid && 

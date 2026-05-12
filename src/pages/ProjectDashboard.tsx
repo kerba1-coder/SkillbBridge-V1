@@ -30,7 +30,7 @@ import { ALL_GIGS } from '../data/gigs';
 
 export const ProjectDashboard: React.FC = () => {
   const { id } = useParams();
-  const gig = ALL_GIGS.find(g => g.id === Number(id)) || ALL_GIGS[0];
+  const gig = ALL_GIGS.find(g => String(g.id) === id) || ALL_GIGS[0];
   
   const [activeTab, setActiveTab] = useState<'overview' | 'work' | 'support' | 'growth'>('overview');
   const [showJournalForm, setShowJournalForm] = useState(false);

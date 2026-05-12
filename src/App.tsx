@@ -5,6 +5,7 @@
 
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Layout } from './components/Layout';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -47,6 +48,16 @@ const AuthenticatedApp = () => {
   return (
     <Router>
       <ScrollToTop />
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          className: 'bento-card !bg-white !text-on-surface !border-slate-100 !shadow-2xl !rounded-2xl !px-6 !py-4 font-bold text-sm',
+          duration: 4000,
+          style: {
+            fontFamily: 'inherit'
+          }
+        }}
+      />
       <Layout>
         <Suspense fallback={<div className="flex-1 animate-pulse bg-surface-container rounded-3xl h-96"></div>}>
           <Routes>
@@ -65,7 +76,7 @@ const AuthenticatedApp = () => {
             <Route path="/application/:id/dashboard" element={<ProjectDashboard />} />
             <Route path="/health" element={<LearnerHealth />} />
             <Route path="/opportunities/:skillName" element={<SkillOpportunities />} />
-            <Route path="/registry" element={<MarketRegistry />} />
+            <Route path="/marketplace" element={<MarketRegistry />} />
             <Route path="/active-projects" element={<ActiveProjects />} />
             <Route path="/poster-dashboard" element={<PosterDashboard />} />
             <Route path="/ai-guidance" element={<AIGuidance />} />

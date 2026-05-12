@@ -13,7 +13,7 @@ export interface Gig {
   org: string;
   image?: string;
   type: string;
-  price?: number;
+  price?: number | string;
   valuation?: string;
   duration: string;
   category: string;
@@ -22,6 +22,9 @@ export interface Gig {
   postedBy: string;
   createdAt: string;
   updatedAt?: string;
+  location?: string;
+  workload?: string;
+  experienceLevel?: string;
 }
 
 export interface MasteredSkill {

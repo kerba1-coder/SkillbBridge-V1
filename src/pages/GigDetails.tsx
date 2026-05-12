@@ -10,7 +10,8 @@ import {
   Clock,
   Briefcase,
   Target,
-  Loader2
+  Loader2,
+  Search
 } from 'lucide-react';
 import { Link, useParams, Navigate, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -79,7 +80,32 @@ export const GigDetails: React.FC = () => {
   }
 
   if (!gig) {
-    return <Navigate to="/" replace />;
+    return (
+      <div className="max-w-xl mx-auto py-32 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 text-center">
+        <div className="space-y-4">
+          <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-center text-slate-300 mx-auto">
+            <Search size={40} />
+          </div>
+          <h2 className="text-3xl font-black text-on-surface tracking-tighter uppercase italic">Mission not found.</h2>
+          <p className="text-slate-600 font-medium italic">We couldn't locate the strategic node you're looking for. It may have been archived or completed.</p>
+        </div>
+
+        <div className="pt-8 flex flex-col gap-4">
+          <button 
+            onClick={() => navigate('/registry')}
+            className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:brightness-110 transition-all uppercase tracking-widest text-[10px] italic"
+          >
+            Explore Active Gigs
+          </button>
+          <button 
+            onClick={() => navigate('/')}
+            className="w-full py-4 bg-white border border-slate-100 text-slate-600 font-black rounded-2xl hover:bg-slate-50 transition-all uppercase tracking-widest text-[10px] italic"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -97,13 +123,23 @@ export const GigDetails: React.FC = () => {
 
       {/* Main Gig Card */}
       <section className="bento-card bg-white border-slate-100 shadow-sm space-y-6 pt-12 overflow-hidden relative">
-        <div className="flex gap-3 relative z-10">
-          <span className="px-4 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-            {gig.type}
+        <div className="flex flex-wrap gap-3 relative z-10">
+          <span className="px-4 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-2">
+            <TrendingUp size={12} /> {gig.type}
           </span>
-          <span className="px-4 py-1.5 rounded-xl bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest border border-orange-100">
-            {gig.duration}
+          <span className="px-4 py-1.5 rounded-xl bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest border border-orange-100 flex items-center gap-2">
+            <Clock size={12} /> {gig.duration}
           </span>
+          {gig.location && (
+            <span className="px-4 py-1.5 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-100 flex items-center gap-2">
+              <Target size={12} /> {gig.location}
+            </span>
+          )}
+          {gig.workload && (
+            <span className="px-4 py-1.5 rounded-xl bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-widest border border-purple-100 flex items-center gap-2">
+              <Database size={12} /> {gig.workload}
+            </span>
+          )}
         </div>
 
         <div className="space-y-4 relative z-10">
@@ -200,21 +236,14 @@ export const GigDetails: React.FC = () => {
 
       {/* Fixed Action Button */}
       <div className="lg:fixed lg:bottom-0 lg:left-80 lg:right-0 p-6 lg:p-8 z-40 lg:bg-gradient-to-t from-white via-white/90 to-transparent flex justify-center pb-32 lg:pb-8">
-        <button 
-          onClick={handleApply}
-          disabled={isApplying}
-          className="w-full max-w-xl py-5 lg:py-6 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/30 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-6 group uppercase tracking-[0.2em] text-sm overflow-hidden relative italic disabled:opacity-50"
+        <Link 
+          to={`/gig/${gig.id}/apply`}
+          className="w-full max-w-xl py-5 lg:py-6 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/30 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-6 group uppercase tracking-[0.2em] text-sm overflow-hidden relative italic"
         >
-          {isApplying ? (
-            <Loader2 className="animate-spin text-white" size={24} />
-          ) : (
-            <>
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
-              <span className="relative z-10 text-white font-black tracking-[0.4em]">Quick apply</span>
-              <Send className="relative z-10 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-500 text-white" size={20} />
-            </>
-          )}
-        </button>
+          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
+          <span className="relative z-10 text-white font-black tracking-[0.4em]">Initialize application</span>
+          <Send className="relative z-10 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-500 text-white" size={20} />
+        </Link>
       </div>
     </div>
   );

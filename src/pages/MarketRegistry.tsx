@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Bookmark, ChevronRight, Clock, Target, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ALL_GIGS } from '../data/gigs';
 import { cn } from '../lib/utils';
@@ -8,21 +8,33 @@ import { gigService } from '../services/firestoreService';
 import { Gig } from '../types';
 
 export const MarketRegistry: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [gigs, setGigs] = useState<Gig[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchGigs = async () => {
+      setLoading(true);
       try {
-        const liveGigs = await gigService.getGigs();
-        if (liveGigs && liveGigs.length > 0) {
-          setGigs(liveGigs);
+        const liveGigs = await gigService.getGigs() || [];
+        
+        // If the database is underpopulated (less than 10 gigs), 
+        // we might want to seed the rest of the catalog in the background
+        if (liveGigs.length < 10) {
+          // Attempt to seed missing baseline gigs
+          try {
+            await gigService.seedGigs(ALL_GIGS);
+          } catch (seedErr) {
+            console.warn("Background seeding failed, using local catalog data", seedErr);
+          }
+          const refreshed = await gigService.getGigs() || [];
+          // If we still have very few gigs (even after seeding attempt), use the local baseline
+          setGigs(refreshed.length > 5 ? refreshed : ALL_GIGS as any);
         } else {
-          // If Firestore is empty, seed with mock data for demo purposes
-          // In a real app, this would be a one-time admin task
-          setGigs(ALL_GIGS as any);
+          setGigs(liveGigs);
         }
       } catch (error) {
         console.error("Error fetching gigs:", error);
@@ -36,8 +48,8 @@ export const MarketRegistry: React.FC = () => {
   }, []);
 
   const categories = useMemo(() => {
-    const cats = ['All', ...new Set(gigs.map(g => g.category))];
-    return cats;
+    const uniqueCats = Array.from(new Set(gigs.map(g => g.category).filter(Boolean)));
+    return ['All', ...uniqueCats.filter(c => c !== 'All')];
   }, [gigs]);
 
   const filteredGigs = useMemo(() => {
@@ -112,7 +124,7 @@ export const MarketRegistry: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {filteredGigs.map((gig, index) => (
               <motion.div
-                key={gig.id}
+                key={`${gig.id}-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -166,9 +178,20 @@ export const MarketRegistry: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="py-32 text-center bento-card">
-            <p className="text-slate-500 font-medium italic">No opportunities match your current filter.</p>
-            <p className="text-[10px] font-bold text-slate-700 uppercase tracking-[0.2em] mt-2">Try adjusting your search criteria.</p>
+          <div className="py-32 flex flex-col items-center text-center space-y-6 bento-card bg-slate-50 border-dashed border-slate-200">
+            <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-slate-300 shadow-sm border border-slate-100">
+              <Search size={40} strokeWidth={1} />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-on-surface uppercase italic tracking-tighter">No signals found.</h3>
+              <p className="text-slate-500 font-medium italic max-w-sm mx-auto">None of the currently active missions match your search query or category filters.</p>
+            </div>
+            <button 
+              onClick={() => { setSearchQuery(''); setSelectedCategory('All'); }}
+              className="px-8 py-3 bg-white border border-slate-200 text-primary font-black rounded-xl uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all shadow-sm active:scale-95 italic"
+            >
+              Reset Protocol & Show All
+            </button>
           </div>
         )}
       </section>
